@@ -195,7 +195,7 @@ Yes, up to 3 concurrent sessions. Each session is isolated by directory and trac
 
 ### Context
 
-Agent B (Claude Code CLI) loses context between invocations.
+Agent B loses context between invocations.
 
 ### Options Considered
 

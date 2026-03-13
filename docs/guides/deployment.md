@@ -26,9 +26,9 @@ SYNAPSE requires three running services:
 │                  systemd                      │
 │                                              │
 │  ┌──────────────┐  ┌──────────────┐          │
-│  │ synapse-   │  │ synapse-claude  │          │
-│  │ claire       │  │              │          │
-│  │ (Nexa API)   │  │ (Claude API) │          │
+│  │ synapse-   │  │ synapse-agent-b │          │
+│  │ agent-a      │  │              │          │
+│  │ (Agent A API)│  │ (Agent B API)│          │
 │  │ port 8000    │  │ port 8002    │          │
 │  └──────┬───────┘  └──────┬───────┘          │
 │         │                  │                  │
@@ -41,26 +41,26 @@ SYNAPSE requires three running services:
 └──────────────────────────────────────────────┘
 ```
 
-The SYNAPSE Bridge (Claude side) runs as a thread within the `synapse-claude` service, listening on Redis pub/sub.
+The SYNAPSE Bridge (Agent B side) runs as a thread within the `synapse-agent-b` service, listening on Redis pub/sub.
 
 ---
 
 ## 3. Service Configuration
 
-### 3.1 Nexa Service (Agent A)
+### 3.1 Agent A Service
 
 ```ini
-# /etc/systemd/system/synapse-nexa.service
+# /etc/systemd/system/synapse-agent-a.service
 [Unit]
-Description=SYNAPSE Nexa - Agent A autonomous instance
+Description=SYNAPSE Agent A - autonomous instance
 After=network.target redis-server.service
 
 [Service]
 Type=simple
 User=synapse
-WorkingDirectory=/opt/synapse/nexa
-EnvironmentFile=/opt/synapse/nexa/.env
-ExecStart=/opt/synapse/nexa/venv/bin/python api.py
+WorkingDirectory=/opt/synapse/agent_a
+EnvironmentFile=/opt/synapse/agent_a/.env
+ExecStart=/opt/synapse/agent_a/venv/bin/python api.py
 Restart=always
 RestartSec=5
 Environment=PYTHONUNBUFFERED=1
@@ -69,20 +69,20 @@ Environment=PYTHONUNBUFFERED=1
 WantedBy=multi-user.target
 ```
 
-### 3.2 Claude Bridge Service (Agent B)
+### 3.2 Agent B Bridge Service
 
 ```ini
-# /etc/systemd/system/synapse-claude.service
+# /etc/systemd/system/synapse-agent-b.service
 [Unit]
-Description=SYNAPSE Claude Bridge - Agent B
+Description=SYNAPSE Agent B Bridge
 After=network.target redis-server.service
 
 [Service]
 Type=simple
 User=synapse
-WorkingDirectory=/opt/synapse/claude
-EnvironmentFile=/opt/synapse/claude/.env
-ExecStart=/opt/synapse/claude/venv/bin/python api.py
+WorkingDirectory=/opt/synapse/agent_b
+EnvironmentFile=/opt/synapse/agent_b/.env
+ExecStart=/opt/synapse/agent_b/venv/bin/python api.py
 Restart=always
 RestartSec=5
 Environment=PYTHONUNBUFFERED=1
@@ -117,28 +117,28 @@ maxmemory-policy allkeys-lru
 ```bash
 # Start all SYNAPSE services
 sudo systemctl start redis-server
-sudo systemctl start synapse-nexa
-sudo systemctl start synapse-claude
+sudo systemctl start synapse-agent-a
+sudo systemctl start synapse-agent-b
 
 # Stop all
-sudo systemctl stop synapse-claude
-sudo systemctl stop synapse-nexa
+sudo systemctl stop synapse-agent-b
+sudo systemctl stop synapse-agent-a
 
 # Restart a single service
-sudo systemctl restart synapse-nexa
+sudo systemctl restart synapse-agent-a
 
 # Enable on boot
 sudo systemctl enable redis-server
-sudo systemctl enable synapse-nexa
-sudo systemctl enable synapse-claude
+sudo systemctl enable synapse-agent-a
+sudo systemctl enable synapse-agent-b
 ```
 
 ### Check Status
 
 ```bash
 # Service status
-systemctl status synapse-nexa
-systemctl status synapse-claude
+systemctl status synapse-agent-a
+systemctl status synapse-agent-b
 systemctl status redis-server
 
 # SYNAPSE health check (API endpoint)
@@ -151,8 +151,8 @@ Expected health response:
 {
   "health": {
     "redis_connected": true,
-    "nexa_subscribed": true,
-    "claude_subscribed": true
+    "agent_a_subscribed": true,
+    "agent_b_subscribed": true
   },
   "active_count": 0,
   "max_concurrent": 3
@@ -166,17 +166,17 @@ Expected health response:
 ### journald (systemd logs)
 
 ```bash
-# Follow Nexa logs in real-time
-journalctl -u synapse-nexa -f
+# Follow Agent A logs in real-time
+journalctl -u synapse-agent-a -f
 
-# Follow Claude Bridge logs
-journalctl -u synapse-claude -f
+# Follow Agent B Bridge logs
+journalctl -u synapse-agent-b -f
 
 # View last 100 lines
-journalctl -u synapse-nexa -n 100
+journalctl -u synapse-agent-a -n 100
 
 # Logs since specific time
-journalctl -u synapse-nexa --since "2026-02-08 14:00"
+journalctl -u synapse-agent-a --since "2026-02-08 14:00"
 
 # Follow Redis logs
 journalctl -u redis-server -f
@@ -199,7 +199,7 @@ This journal records all messages, transitions, and orchestrator decisions with 
 redis-cli MONITOR
 
 # Monitor SYNAPSE channels only
-redis-cli SUBSCRIBE synapse:nexa_to_claude synapse:claude_to_nexa synapse:francis synapse:control
+redis-cli SUBSCRIBE synapse:agent_a_to_agent_b synapse:agent_b_to_agent_a synapse:supervisor synapse:control
 
 # Redis info
 redis-cli INFO stats
@@ -214,7 +214,7 @@ Create `.env` files for each service. See the [Configuration Guide](configuratio
 
 ### Minimum required variables
 
-**Nexa side** (`/opt/synapse/nexa/.env`):
+**Agent A side** (`/opt/synapse/agent_a/.env`):
 
 ```bash
 # Redis
@@ -224,17 +224,17 @@ REDIS_PORT=6379
 # SYNAPSE workspace
 SYNAPSE_WORKSPACE=/opt/synapse/workspace
 
-# Notifications (Telegram)
-TELEGRAM_BOT_TOKEN=<your-token>
-TELEGRAM_CHAT_ID=<your-chat-id>
+# Notifications (optional — configure for your notification provider)
+# TELEGRAM_BOT_TOKEN=<your-token>
+# TELEGRAM_CHAT_ID=<your-chat-id>
 
 # Email (optional, for document delivery)
-GMAIL_ADDRESS=<your-email>
-GMAIL_APP_PASSWORD=<your-app-password>
+SYNAPSE_SMTP_FROM=<your-email>
+SYNAPSE_SMTP_PASSWORD=<your-app-password>
 SUPERVISOR_EMAIL=<supervisor-email>
 ```
 
-**Claude side** (`/opt/synapse/claude/.env`):
+**Agent B side** (`/opt/synapse/agent_b/.env`):
 
 ```bash
 # Redis
@@ -274,8 +274,8 @@ rename-command DEBUG ""
 chmod 700 $SYNAPSE_WORKSPACE/SYNAPSE_SESSION_*
 
 # Environment files: owner-only read
-chmod 600 /opt/synapse/nexa/.env
-chmod 600 /opt/synapse/claude/.env
+chmod 600 /opt/synapse/agent_a/.env
+chmod 600 /opt/synapse/agent_b/.env
 
 # Service files: root-owned
 sudo chown root:root /etc/systemd/system/synapse-*.service
@@ -311,7 +311,7 @@ sudo ss -tlnp | grep -E '8000|8002|6379'
 HEALTH=$(curl -s http://localhost:8000/synapse/health 2>/dev/null)
 
 if [ $? -ne 0 ]; then
-    echo "CRITICAL: Nexa API unreachable"
+    echo "CRITICAL: Agent A API unreachable"
     exit 2
 fi
 
@@ -394,7 +394,7 @@ cp -r backup/SYNAPSE_SESSION_* "$SYNAPSE_WORKSPACE"/
 # 3. Restore .env files manually (from secure storage)
 
 # 4. Restart all services
-sudo systemctl restart redis-server synapse-nexa synapse-claude
+sudo systemctl restart redis-server synapse-agent-a synapse-agent-b
 
 # 5. Verify
 curl http://localhost:8000/synapse/health
@@ -409,11 +409,11 @@ curl http://localhost:8000/synapse/health
 | Symptom | Cause | Solution |
 |---------|-------|----------|
 | `redis_connected: false` | Redis not running | `sudo systemctl start redis-server` |
-| `claude_subscribed: false` | Bridge not connected | `sudo systemctl restart synapse-claude` |
+| `agent_b_subscribed: false` | Bridge not connected | `sudo systemctl restart synapse-agent-b` |
 | Session stuck in PAUSED | Manual pause or timeout | `/synapse resume` via Telegram |
 | Messages not delivered | Redis pub/sub desync | Restart both services |
 | Journal locked | Stale lock file | Remove `/tmp/synapse_journal.lock` |
-| Claude timeout | Response > 1800s | Check Claude Code CLI, increase timeout |
+| Agent B timeout | Response > 1800s | Check Agent B CLI, increase timeout |
 | Email delivery failed | Gmail auth expired | Regenerate app password |
 | Max sessions reached | 3 concurrent limit | Complete or cancel existing sessions |
 
@@ -423,12 +423,12 @@ curl http://localhost:8000/synapse/health
 # Full restart sequence (correct order)
 sudo systemctl restart redis-server
 sleep 2
-sudo systemctl restart synapse-nexa
+sudo systemctl restart synapse-agent-a
 sleep 2
-sudo systemctl restart synapse-claude
+sudo systemctl restart synapse-agent-b
 
 # Verify
-systemctl status redis-server synapse-nexa synapse-claude --no-pager
+systemctl status redis-server synapse-agent-a synapse-agent-b --no-pager
 curl -s http://localhost:8000/synapse/health | python3 -m json.tool
 ```
 
@@ -438,10 +438,10 @@ To run a service in foreground with verbose output:
 
 ```bash
 # Stop the systemd service first
-sudo systemctl stop synapse-nexa
+sudo systemctl stop synapse-agent-a
 
 # Run manually with debug
-cd /opt/synapse/nexa
+cd /opt/synapse/agent_a
 source venv/bin/activate
 PYTHONUNBUFFERED=1 python api.py
 ```

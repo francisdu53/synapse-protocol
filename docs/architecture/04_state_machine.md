@@ -177,11 +177,11 @@ Archive (optional):
 {
   "session_id": "SYNAPSE_SESSION_20260208_01_project",
   "created_at": "2026-02-08T10:00:00",
-  "created_by": "nexa",
+  "created_by": "agent_a",
   "status": "IMPLEMENTING",
   "objective": "Implement feature X",
   "working_directory": "/path/to/session/",
-  "claude_code_session_id": "abc-123-def",
+  "agent_b_session_id": "abc-123-def",
   "shared_context": ["/path/to/reference.md"],
   "approved_at": "2026-02-08T10:45:00",
   "approved_scope": ["Create file A", "Modify file B"],

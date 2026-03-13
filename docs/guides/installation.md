@@ -7,7 +7,7 @@
 | Python | 3.10+ | Runtime |
 | Redis | 6.0+ | Pub/sub messaging |
 | pip | latest | Package management |
-| Claude Code CLI | latest | Bridge component (optional) |
+| Agent B CLI | latest | Bridge component (optional) |
 
 ## 1. Install Redis
 
@@ -64,12 +64,12 @@ REDIS_PORT=6379
 SYNAPSE_WORKSPACE=/path/to/workspace
 
 # Notifications (optional)
-TELEGRAM_BOT_TOKEN=your_bot_token
-TELEGRAM_CHAT_ID=your_chat_id
+# TELEGRAM_BOT_TOKEN=your_bot_token
+# TELEGRAM_CHAT_ID=your_chat_id
 
 # Email notifications (optional)
-NEXA_GMAIL_ADDRESS=your_email@gmail.com
-NEXA_GMAIL_APP_PASSWORD=your_app_password
+SYNAPSE_SMTP_FROM=your_email@gmail.com
+SYNAPSE_SMTP_PASSWORD=your_app_password
 SUPERVISOR_EMAIL=supervisor@example.com
 ```
 
@@ -107,8 +107,8 @@ Expected response:
 {
   "health": {
     "redis_connected": true,
-    "nexa_subscribed": false,
-    "claude_subscribed": false
+    "agent_a_subscribed": false,
+    "agent_b_subscribed": false
   },
   "active_sessions": [],
   "active_count": 0,
@@ -182,6 +182,6 @@ curl http://localhost:8000/synapse/session
 |---------|----------|
 | `redis.ConnectionError` | Check Redis is running: `systemctl status redis-server` |
 | `ModuleNotFoundError: synapse` | Ensure you're in the correct virtualenv and working directory |
-| Bridge timeout (1800s) | Increase `CLAUDE_PROCESS_TIMEOUT` in config |
+| Bridge timeout (1800s) | Increase `AGENT_B_PROCESS_TIMEOUT` in config |
 | Session not found | Check `SESSIONS_BASE_DIR` points to the correct directory |
 | Email not sending | Verify Gmail app password (not regular password) |

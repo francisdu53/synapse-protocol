@@ -20,14 +20,14 @@ SYNAPSE uses Redis pub/sub as its transport layer. Redis was chosen over alterna
 
 ```
 +------------+                                    +------------+
-|            |  synapse:nexa_to_claude            |            |
+|            |  synapse:agent_a_to_agent_b            |            |
 |  Agent A   | --------------------------------> |  Agent B   |
-|  (Nexa)    |                                    |  (Bridge)  |
-|            |  synapse:claude_to_nexa            |            |
+|  (Thinker) |                                    |  (Bridge)  |
+|            |  synapse:agent_b_to_agent_a            |            |
 |            | <-------------------------------- |            |
 +-----+------+                                    +------------+
       |
-      |  synapse:francis
+      |  synapse:supervisor
       | --------------------------------> Supervisor (Telegram)
       |
       |  synapse:control
@@ -38,9 +38,9 @@ SYNAPSE uses Redis pub/sub as its transport layer. Redis was chosen over alterna
 
 | Channel | Direction | Publisher | Subscriber | Content |
 |---------|-----------|-----------|------------|---------|
-| `synapse:nexa_to_claude` | A -> B | Agent A (Orchestrator) | Bridge | Work messages, iterations |
-| `synapse:claude_to_nexa` | B -> A | Bridge | Agent A (Redis callback) | Responses, proposals |
-| `synapse:francis` | System -> Supervisor | Agent A (notifications) | Supervisor Listener -> Telegram | Notifications, checkpoints |
+| `synapse:agent_a_to_agent_b` | A -> B | Agent A (Orchestrator) | Bridge | Work messages, iterations |
+| `synapse:agent_b_to_agent_a` | B -> A | Bridge | Agent A (Redis callback) | Responses, proposals |
+| `synapse:supervisor` | System -> Supervisor | Agent A (notifications) | Supervisor Listener -> Telegram | Notifications, checkpoints |
 | `synapse:control` | Supervisor -> System | Telegram bot | Agent A + Bridge | Commands: approve, reject, pause |
 
 ### Channel Rules
@@ -59,7 +59,7 @@ SYNAPSE uses Redis pub/sub as its transport layer. Redis was chosen over alterna
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "session_id": "SYNAPSE_SESSION_20260208_01_project",
   "timestamp": "2026-02-08T14:30:00.000Z",
-  "sender": "nexa",
+  "sender": "agent_a",
   "type": "dialogue",
   "content": "Message text content here...",
   "metadata": {
@@ -77,7 +77,7 @@ SYNAPSE uses Redis pub/sub as its transport layer. Redis was chosen over alterna
 | `id` | UUID v4 | Unique identifier, serves as idempotency key |
 | `session_id` | string | Reference to the active session |
 | `timestamp` | ISO 8601 | UTC timestamp |
-| `sender` | `"nexa"` or `"claude"` | Message author |
+| `sender` | `"agent_a"` or `"agent_b"` | Message author |
 | `type` | MessageType enum | Message category |
 | `content` | string | Message body |
 

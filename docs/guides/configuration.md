@@ -18,9 +18,9 @@ All SYNAPSE configuration is centralized in two files:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CHANNEL_NEXA_TO_CLAUDE` | `synapse:nexa_to_claude` | Agent A -> Agent B messages |
-| `CHANNEL_CLAUDE_TO_NEXA` | `synapse:claude_to_nexa` | Agent B -> Agent A messages |
-| `CHANNEL_FRANCIS` | `synapse:francis` | System -> Supervisor notifications |
+| `CHANNEL_A_TO_B` | `synapse:agent_a_to_agent_b` | Agent A -> Agent B messages |
+| `CHANNEL_B_TO_A` | `synapse:agent_b_to_agent_a` | Agent B -> Agent A messages |
+| `CHANNEL_SUPERVISOR` | `synapse:supervisor` | System -> Supervisor notifications |
 | `CHANNEL_CONTROL` | `synapse:control` | Supervisor -> System commands |
 
 ### Sessions
@@ -37,9 +37,9 @@ All SYNAPSE configuration is centralized in two files:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CLAUDE_RESPONSE_TIMEOUT` | `60` | Seconds to wait for Agent B response |
-| `CLAUDE_PROCESS_TIMEOUT` | `1800` | Max seconds per CLI invocation (30 minutes) |
-| `CLAUDE_RETRY_MAX` | `1` | Max retries on Agent B failure |
+| `AGENT_B_RESPONSE_TIMEOUT` | `60` | Seconds to wait for Agent B response |
+| `AGENT_B_PROCESS_TIMEOUT` | `1800` | Max seconds per CLI invocation (30 minutes) |
+| `AGENT_B_RETRY_MAX` | `1` | Max retries on Agent B failure |
 | `MAX_MESSAGE_SIZE` | `524288` | Max message size in bytes (512 KB) |
 | `IDEMPOTENCY_TTL` | `86400` | Message dedup window in seconds (24h) |
 
@@ -66,8 +66,8 @@ All SYNAPSE configuration is centralized in two files:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CLAUDE_BIN` | `claude` | Path to Claude Code CLI binary |
-| `CLAUDE_WORKING_DIR` | `<SESSIONS_BASE_DIR>` | Working directory for CLI invocations |
+| `AGENT_B_BIN` | `agent_b` | Path to Agent B CLI binary |
+| `AGENT_B_WORKING_DIR` | `<SESSIONS_BASE_DIR>` | Working directory for CLI invocations |
 | `FALLBACK_FILE` | `<base>/.synapse_fallback.json` | Fallback file path if Redis down |
 | `LOG_FILE` | `<base>/synapse/bridge.log` | Bridge log file location |
 
@@ -75,10 +75,10 @@ All SYNAPSE configuration is centralized in two files:
 
 | Variable | Source | Description |
 |----------|--------|-------------|
-| `TELEGRAM_BOT_TOKEN` | `.env` | Telegram bot token for notifications |
-| `TELEGRAM_CHAT_ID` | `.env` | Telegram chat ID for supervisor |
-| `NEXA_GMAIL_ADDRESS` | `.env` | Gmail address for sending docs |
-| `NEXA_GMAIL_APP_PASSWORD` | `.env` | Gmail app password (2FA required) |
+| `# TELEGRAM_BOT_TOKEN` | `.env` | Telegram bot token for notifications (optional) |
+| `# TELEGRAM_CHAT_ID` | `.env` | Telegram chat ID for supervisor (optional) |
+| `SYNAPSE_SMTP_FROM` | `.env` | SMTP sender address for sending docs |
+| `SYNAPSE_SMTP_PASSWORD` | `.env` | SMTP app password (2FA required) |
 | `SUPERVISOR_EMAIL` | `.env` | Supervisor email address |
 
 ## Example `.env` File
@@ -96,12 +96,12 @@ REDIS_PORT=6379
 SYNAPSE_WORKSPACE=/path/to/workspace
 
 # Telegram notifications (optional)
-TELEGRAM_BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
-TELEGRAM_CHAT_ID=123456789
+# TELEGRAM_BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+# TELEGRAM_CHAT_ID=123456789
 
 # Email notifications (optional)
-NEXA_GMAIL_ADDRESS=your_ai@gmail.com
-NEXA_GMAIL_APP_PASSWORD=abcd efgh ijkl mnop
+SYNAPSE_SMTP_FROM=your_ai@gmail.com
+SYNAPSE_SMTP_PASSWORD=abcd efgh ijkl mnop
 SUPERVISOR_EMAIL=supervisor@example.com
 ```
 
@@ -119,14 +119,14 @@ To use custom Redis channel names, update both configurations symmetrically:
 
 **Agent A side** (`synapse/config.py`):
 ```python
-CHANNEL_NEXA_TO_CLAUDE = "my_project:agent_a_to_b"
-CHANNEL_CLAUDE_TO_NEXA = "my_project:agent_b_to_a"
+CHANNEL_A_TO_B = "my_project:agent_a_to_b"
+CHANNEL_B_TO_A = "my_project:agent_b_to_a"
 ```
 
 **Bridge side** (`synapse/config.py`):
 ```python
-CHANNEL_NEXA_TO_CLAUDE = "my_project:agent_a_to_b"
-CHANNEL_CLAUDE_TO_NEXA = "my_project:agent_b_to_a"
+CHANNEL_A_TO_B = "my_project:agent_a_to_b"
+CHANNEL_B_TO_A = "my_project:agent_b_to_a"
 ```
 
 Both sides must use identical channel names for communication to work.

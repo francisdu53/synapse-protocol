@@ -6,14 +6,14 @@ SYNAPSE uses 4 Redis pub/sub channels:
 
 | Channel | Direction | Publisher | Subscriber |
 |---------|-----------|-----------|------------|
-| `synapse:nexa_to_claude` | A -> B | Agent A | Bridge |
-| `synapse:claude_to_nexa` | B -> A | Bridge | Agent A |
-| `synapse:francis` | System -> Supervisor | Agent A | Supervisor Listener |
+| `synapse:agent_a_to_agent_b` | A -> B | Agent A | Bridge |
+| `synapse:agent_b_to_agent_a` | B -> A | Bridge | Agent A |
+| `synapse:supervisor` | System -> Supervisor | Agent A | Supervisor Listener |
 | `synapse:control` | Supervisor -> System | Telegram bot | Agent A + Bridge |
 
 ## 2. Event Payloads
 
-### synapse:nexa_to_claude
+### synapse:agent_a_to_agent_b
 
 Messages from Agent A to Agent B. Always a `SynapseMessage`:
 
@@ -22,7 +22,7 @@ Messages from Agent A to Agent B. Always a `SynapseMessage`:
   "id": "uuid",
   "session_id": "SYNAPSE_SESSION_...",
   "timestamp": "2026-02-08T14:30:00Z",
-  "sender": "nexa",
+  "sender": "agent_a",
   "type": "dialogue",
   "content": "[SYNAPSE:IMPLEMENTING] [SOURCE:orchestrator_iterate] [SCOPE:...]\n\nActual message content here...",
   "metadata": {}
@@ -31,7 +31,7 @@ Messages from Agent A to Agent B. Always a `SynapseMessage`:
 
 **Note**: The orchestrator injects a scope header at the beginning of the content field.
 
-### synapse:claude_to_nexa
+### synapse:agent_b_to_agent_a
 
 Responses from Agent B to Agent A:
 
@@ -40,7 +40,7 @@ Responses from Agent B to Agent A:
   "id": "uuid",
   "session_id": "SYNAPSE_SESSION_...",
   "timestamp": "2026-02-08T14:30:15Z",
-  "sender": "claude",
+  "sender": "agent_b",
   "type": "dialogue",
   "content": "Response from Agent B...",
   "metadata": {
@@ -49,7 +49,7 @@ Responses from Agent B to Agent A:
 }
 ```
 
-### synapse:francis
+### synapse:supervisor
 
 Notifications for the supervisor:
 
@@ -86,7 +86,7 @@ Commands from the supervisor:
   "id": "uuid",
   "session_id": "SYNAPSE_SESSION_...",
   "timestamp": "2026-02-08T14:30:00Z",
-  "sender": "francis",
+  "sender": "supervisor",
   "type": "control",
   "content": "approve",
   "metadata": {
@@ -121,7 +121,7 @@ def on_message(channel: str, message: SynapseMessage):
     print(f"[{channel}] {message.sender}: {message.content[:100]}")
 
 client.subscribe(
-    channels=["synapse:claude_to_nexa", "synapse:control"],
+    channels=["synapse:agent_b_to_agent_a", "synapse:control"],
     callback=on_message,
 )
 ```
@@ -134,7 +134,7 @@ import json
 
 r = redis.Redis(host="localhost", port=6379, decode_responses=True)
 pubsub = r.pubsub()
-pubsub.subscribe("synapse:nexa_to_claude", "synapse:control")
+pubsub.subscribe("synapse:agent_a_to_agent_b", "synapse:control")
 
 for raw in pubsub.listen():
     if raw["type"] != "message":
@@ -152,17 +152,17 @@ from synapse.messages import SynapseMessage, MessageType
 
 message = SynapseMessage(
     session_id="SYNAPSE_SESSION_...",
-    sender="nexa",
+    sender="agent_a",
     type=MessageType.DIALOGUE,
     content="Your message here",
 )
-client.publish_to_claude(message)
+client.publish_to_agent_b(message)
 ```
 
 ### Notify Supervisor
 
 ```python
-client.notify_francis(
+client.notify_supervisor(
     session_id="SYNAPSE_SESSION_...",
     notification_type="checkpoint",
     content="Progress: Module 3 implementation complete",
@@ -211,7 +211,7 @@ If Redis is unavailable:
 ### Check channel subscribers
 
 ```bash
-redis-cli pubsub numsub synapse:nexa_to_claude synapse:claude_to_nexa
+redis-cli pubsub numsub synapse:agent_a_to_agent_b synapse:agent_b_to_agent_a
 ```
 
 ### Monitor all SYNAPSE traffic

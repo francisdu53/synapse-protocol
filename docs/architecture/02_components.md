@@ -12,7 +12,7 @@ The orchestrator is the autonomous decision engine on Agent A's side. It receive
 - `telegram_notifier` — Telegram notifications
 - `email_sender` (SynapseEmailSender) — Email delivery
 
-### Entry Point: `handle_claude_response(message, session_id)`
+### Entry Point: `handle_agent_b_response(message, session_id)`
 
 Called by the Redis callback when Agent B publishes a response. Flow:
 
@@ -115,9 +115,9 @@ Transitions are validated against `VALID_TRANSITIONS` map. Invalid transitions r
 
 | Method | Channel | Purpose |
 |--------|---------|---------|
-| `publish_to_claude(message)` | `synapse:nexa_to_claude` | Send to Agent B |
-| `publish_to_nexa(message)` | `synapse:claude_to_nexa` | Bridge utility |
-| `notify_francis(session_id, type, content)` | `synapse:francis` | Supervisor notification |
+| `publish_to_agent_b(message)` | `synapse:agent_a_to_agent_b` | Send to Agent B |
+| `publish_to_agent_a(message)` | `synapse:agent_b_to_agent_a` | Bridge utility |
+| `notify_supervisor(session_id, type, content)` | `synapse:supervisor` | Supervisor notification |
 | `publish_control(command, session_id, data)` | `synapse:control` | Supervisor command |
 
 ### Subscription
@@ -160,7 +160,7 @@ If Redis is unavailable, messages are written atomically to `.synapse_fallback.j
 **SynapseMessage**: Transport wrapper with validation
 - `id` (UUID v4, auto-generated)
 - `session_id` (string)
-- `sender` ("nexa" | "claude")
+- `sender` ("agent_a" | "agent_b")
 - `type` (MessageType)
 - `content` (string)
 - `timestamp` (ISO 8601)
@@ -215,7 +215,7 @@ Formats messages for the human supervisor via Telegram.
 | `format_docs_ready(session)` | Documents ready for review |
 | `format_checkpoint(session, progress)` | Progress update |
 | `format_approval_needed(session, action, reason, impact)` | Out-of-scope request |
-| `format_disagreement(session, nexa_pos, claude_pos)` | Agent disagreement |
+| `format_disagreement(session, agent_a_position, agent_b_position)` | Agent disagreement |
 | `format_session_completed(session)` | Session finished |
 | `format_session_error(session, error)` | Critical error |
 | `format_health(health, session)` | Health check output |
@@ -249,10 +249,10 @@ Sends documents to the supervisor via Gmail SMTP.
 
 ## 8. Supervisor Listener (`supervisor_listener.py`)
 
-### Class: `FrancisListener`
+### Class: `SupervisorListener`
 
 Background daemon thread that:
-1. Subscribes to `synapse:francis` Redis channel
+1. Subscribes to `synapse:supervisor` Redis channel
 2. Parses incoming JSON messages
 3. Forwards to supervisor via Telegram
 4. Auto-reconnects on Redis failure
@@ -261,23 +261,23 @@ Background daemon thread that:
 
 ## 9. Bridge (`bridge.py`)
 
-The bridge connects Agent B (Claude Code CLI) to the SYNAPSE Redis network.
+The bridge connects Agent B (CLI executor) to the SYNAPSE Redis network.
 
 ### Main Loop
 
 ```
 1. Connect to Redis
 2. Find active session on disk
-3. Load claude_code_session_id for --resume
-4. Subscribe to synapse:nexa_to_claude + synapse:control
+3. Load agent_b_session_id for --resume
+4. Subscribe to synapse:agent_a_to_agent_b + synapse:control
 5. For each message:
    a. Check idempotency
    b. Load/reload session data
    c. Build system prompt (objectives + plan + journal)
-   d. Call Claude Code CLI (--resume or --append-system-prompt)
+   d. Call Agent B CLI (--resume or --append-system-prompt)
    e. Parse JSON response
-   f. Publish response to synapse:claude_to_nexa
-   g. Save claude_code_session_id for next call
+   f. Publish response to synapse:agent_b_to_agent_a
+   g. Save agent_b_session_id for next call
 ```
 
 ### Context Injection
@@ -307,7 +307,7 @@ FastAPI router with prefix `/synapse`.
 2. Creates `SynapseSession`
 3. Creates `SynapseOrchestrator`
 4. Subscribes to Redis channels
-5. Starts `FrancisListener`
+5. Starts `SupervisorListener`
 
 ### Message Routing
 
@@ -315,4 +315,4 @@ Incoming messages are routed by `session_id` to the correct session context, sup
 
 ### Control Commands
 
-Francis commands (`approve`, `reject`, `revise`, `pause`, `resume`, `cancel`) are routed via `_handle_control_command()` which validates transitions and triggers orchestrator actions.
+Supervisor commands (`approve`, `reject`, `revise`, `pause`, `resume`, `cancel`) are routed via `_handle_control_command()` which validates transitions and triggers orchestrator actions.

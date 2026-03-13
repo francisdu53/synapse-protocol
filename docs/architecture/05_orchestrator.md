@@ -76,7 +76,7 @@ The most common action. Sends the next message to Agent B.
 1. Build scope header: [SYNAPSE:<status>] [SOURCE:orchestrator_iterate] [SCOPE:<objective>]
 2. Construct message with session context
 3. Check CONCEPTUALIZING_BLOCKED_PATTERNS if in conceptualization phase
-4. Publish to synapse:nexa_to_claude
+4. Publish to synapse:agent_a_to_agent_b
 5. Increment iterate counter
 6. Log to journal
 ```
@@ -99,7 +99,7 @@ Sends a progress update to the supervisor.
 
 ```
 1. Format checkpoint notification
-2. Publish to synapse:francis
+2. Publish to synapse:supervisor
 3. Forward to Telegram
 4. Add checkpoint to session.json
 5. Reset iterate counter

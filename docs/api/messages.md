@@ -11,7 +11,7 @@ The fundamental unit of communication in SYNAPSE.
   "id": "string (UUID v4)",
   "session_id": "string",
   "timestamp": "string (ISO 8601)",
-  "sender": "string (nexa|claude)",
+  "sender": "string (agent_a|agent_b)",
   "type": "string (MessageType)",
   "content": "string",
   "metadata": "object (optional)"
@@ -25,7 +25,7 @@ The fundamental unit of communication in SYNAPSE.
 | `id` | UUID v4 | Yes | Yes (on creation) | Unique identifier, idempotency key |
 | `session_id` | string | Yes | No | Session this message belongs to |
 | `timestamp` | ISO 8601 | Yes | Yes (on creation) | UTC creation time |
-| `sender` | string | Yes | No | `"nexa"` or `"claude"` |
+| `sender` | string | Yes | No | `"agent_a"` or `"agent_b"` |
 | `type` | MessageType | Yes | No | Message category |
 | `content` | string | Yes | No | Message body (max 512 KB) |
 | `metadata` | object | No | No | Additional context |
@@ -34,7 +34,7 @@ The fundamental unit of communication in SYNAPSE.
 
 - `id` must be a valid UUID v4
 - `session_id` must not be empty
-- `sender` must be `"nexa"` or `"claude"`
+- `sender` must be `"agent_a"` or `"agent_b"`
 - `type` must be a valid MessageType value
 - `content` must not be empty
 - Total serialized size must not exceed `MAX_MESSAGE_SIZE` (512 KB)
@@ -162,7 +162,7 @@ Session metadata stored in `session.json`.
 |-------|------|-------------|
 | `session_id` | string | Unique session identifier |
 | `created_at` | ISO 8601 | Creation timestamp |
-| `created_by` | string | Who initiated (nexa, francis) |
+| `created_by` | string | Who initiated (agent_a, supervisor) |
 | `status` | SessionStatus | Current state |
 | `objective` | string | Session objective |
 | `working_directory` | string | Session directory path |
@@ -186,9 +186,9 @@ Session metadata stored in `session.json`.
 # Serialize
 message = SynapseMessage(
     session_id="SYNAPSE_SESSION_20260208_01_test",
-    sender="nexa",
+    sender="agent_a",
     type=MessageType.DIALOGUE,
-    content="Hello Claude",
+    content="Hello Agent B",
 )
 json_str = message.to_json()
 

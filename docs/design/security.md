@@ -26,7 +26,7 @@
    External Services:
    - Telegram Bot API
    - Gmail SMTP
-   - Claude Code CLI (Anthropic API)
+   - Agent B CLI (external LLM API)
 ```
 
 All SYNAPSE components run on the same machine. Redis is bound to localhost. External communications use TLS.
@@ -200,7 +200,7 @@ All file writes use `.tmp` + `os.rename()`:
 |-------|-------------|--------|
 | All messages | `02_JOURNAL.md` | Timestamped entries |
 | State transitions | `session.json` | Status field updates |
-| Supervisor decisions | `02_JOURNAL.md` | "Francis approves/rejects: reason" |
+| Supervisor decisions | `02_JOURNAL.md` | "Supervisor approves/rejects: reason" |
 | Checkpoints | `session.json` + Telegram | Progress markers |
 | Errors | Application logs | Standard logging |
 | Redis traffic | Monitorable | `redis-cli psubscribe "synapse:*"` |

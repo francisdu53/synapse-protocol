@@ -38,7 +38,7 @@ SYNAPSE is built on a **peer-to-peer** model, not an orchestrator/agent model.
 |        +--------------------------------------------------+
 |                                                           |
 |  +--------------+                                         |
-|  |  Supervisor  | <--- synapse:francis (Redis)            |
+|  |  Supervisor  | <--- synapse:supervisor (Redis)          |
 |  |  (Human)     | ---> synapse:control (Redis)            |
 |  |  Telegram    |                                    |
 |  |  Email       |                                    |
@@ -89,14 +89,14 @@ SYNAPSE is built on a **peer-to-peer** model, not an orchestrator/agent model.
 2. Agent A creates session (session.json + 00_OBJECTIF.md)
    |
 3. Agent A sends first message to Agent B
-   |    via synapse:nexa_to_claude (Redis)
+   |    via synapse:agent_a_to_agent_b (Redis)
    |
 4. Bridge receives message, invokes Agent B CLI
    |    with --append-system-prompt (context)
    |    or --resume (continuity)
    |
 5. Agent B responds
-   |    via synapse:claude_to_nexa (Redis)
+   |    via synapse:agent_b_to_agent_a (Redis)
    |
 6. Agent A Orchestrator evaluates response
    |    via LLM decision engine

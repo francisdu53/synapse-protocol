@@ -16,7 +16,7 @@ Create a new SYNAPSE session.
 {
   "project_name": "ghost-impl",
   "objective": "Implement a distributed rate limiter",
-  "created_by": "nexa",
+  "created_by": "agent_a",
   "shared_context": ["/path/to/reference.md"]
 }
 ```
@@ -25,7 +25,7 @@ Create a new SYNAPSE session.
 |-------|------|----------|---------|-------------|
 | `project_name` | string | Yes | — | Short project identifier (used in session ID) |
 | `objective` | string | Yes | — | What the session should accomplish |
-| `created_by` | string | No | `"nexa"` | Who initiated the session |
+| `created_by` | string | No | `"agent_a"` | Who initiated the session |
 | `shared_context` | list | No | `[]` | File paths to reference documents |
 
 ### Response (200)
@@ -36,7 +36,7 @@ Create a new SYNAPSE session.
   "session": {
     "session_id": "SYNAPSE_SESSION_20260208_01_ghost-impl",
     "created_at": "2026-02-08T10:00:00",
-    "created_by": "nexa",
+    "created_by": "agent_a",
     "status": "CONCEPTUALIZING",
     "objective": "Implement a distributed rate limiter",
     "messages_count": 0,
@@ -165,7 +165,7 @@ Send a message from Agent A to Agent B via Redis.
 
 ### Side Effects
 
-- Publishes message to `synapse:nexa_to_claude` (Redis)
+- Publishes message to `synapse:agent_a_to_agent_b` (Redis)
 - Increments session message count
 - Appends entry to `02_JOURNAL.md`
 
@@ -284,7 +284,7 @@ Read recent journal entries.
 
 ```json
 {
-  "entries": "## 2026-02-08 14:23 — Claude [dialogue] : Implemented the...\n\n## 2026-02-08 14:20 — Nexa [dialogue] : Let's proceed with..."
+  "entries": "## 2026-02-08 14:23 — Agent B [dialogue] : Implemented the...\n\n## 2026-02-08 14:20 — Agent A [dialogue] : Let's proceed with..."
 }
 ```
 
@@ -325,8 +325,8 @@ Check SYNAPSE infrastructure health.
 {
   "health": {
     "redis_connected": true,
-    "nexa_subscribed": true,
-    "claude_subscribed": true
+    "agent_a_subscribed": true,
+    "agent_b_subscribed": true
   },
   "active_sessions": [...],
   "active_count": 1,
@@ -341,5 +341,5 @@ Check SYNAPSE infrastructure health.
 | Field | Description |
 |-------|-------------|
 | `redis_connected` | Redis server responds to PING |
-| `nexa_subscribed` | Someone is subscribed to `synapse:nexa_to_claude` |
-| `claude_subscribed` | Someone is subscribed to `synapse:claude_to_nexa` |
+| `agent_a_subscribed` | Someone is subscribed to `synapse:agent_a_to_agent_b` |
+| `agent_b_subscribed` | Someone is subscribed to `synapse:agent_b_to_agent_a` |

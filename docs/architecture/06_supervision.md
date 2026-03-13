@@ -182,7 +182,7 @@ Every action is traceable:
 |------|-------|--------|
 | All messages | `02_JOURNAL.md` | Timestamped append-only log |
 | State changes | `session.json` | Status + transition history |
-| Supervisor decisions | `02_JOURNAL.md` | "Francis approves/rejects: reason" |
+| Supervisor decisions | `02_JOURNAL.md` | "Supervisor approves/rejects: reason" |
 | Checkpoints | `session.json` + Telegram | Progress markers |
 | Approvals | `session.json` | `approved_at`, `approved_scope` |
 
